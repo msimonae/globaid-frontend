@@ -16,7 +16,8 @@ Ela compara as informações textuais (descrição, características) com as ima
 """)
 
 # --- URL da API Backend ---
-BACKEND_URL = "https://globald.onrender.com/analyze"  # Use st.secrets para produção
+#BACKEND_URL = "https://globald.onrender.com/analyze"  # Use st.secrets para produção
+BACKEND_URL = "http://127.0.0.1:8000/analyze"
 
 # --- Formulário de Entrada ---
 with st.form("product_form"):
@@ -51,8 +52,18 @@ if submitted and amazon_url:
                 main_image_url = data.get("product_image_url")
                 if main_image_url:
                     st.image(main_image_url, caption="Imagem Principal do Produto")
+                    # Exibe outras imagens do produto, se houver
+                    product_photos = data.get("product_photos", [])
+                    if product_photos:
+                        st.markdown("**Outras imagens do produto:**")
+                        st.image(product_photos, width=200)
                 else:
                     st.warning("Imagem principal não disponível.")
+                    # Exibe outras imagens, se houver
+                    product_photos = data.get("product_photos", [])
+                    if product_photos:
+                        st.markdown("**Outras imagens do produto:**")
+                        st.image(product_photos, width=200)
 
         except requests.exceptions.HTTPError:
             error_details = response.json().get("detail", "Erro desconhecido.")
