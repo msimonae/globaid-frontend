@@ -16,8 +16,8 @@ Ela compara as informações textuais (descrição, características) com as ima
 """)
 
 # --- URL da API Backend ---
-#BACKEND_URL = "https://globald.onrender.com/analyze"  # Use st.secrets para produção
-BACKEND_URL = "http://127.0.0.1:8000/analyze"
+BACKEND_URL = "https://globald.onrender.com/analyze"  # Use st.secrets para produção
+#BACKEND_URL = "http://127.0.0.1:8000/analyze"
 
 # --- Formulário de Entrada ---
 with st.form("product_form"):
