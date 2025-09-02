@@ -14,7 +14,7 @@ st.markdown("Uma ferramenta de IA para **Analisar Inconsistências** e **Otimiza
 
 # --- URLs da API Backend (ajuste conforme necessário) ---
 # Use st.secrets["BACKEND_BASE_URL"] em produção para segurança
-BACKEND_BASE_URL = "https://globald.onrender.com" 
+BACKEND_BASE_URL = "https://globald.onrender.com"
 # BACKEND_BASE_URL = "http://127.0.0.1:8000" # Para teste local
 ANALYZE_URL = f"{BACKEND_BASE_URL}/analyze"
 OPTIMIZE_URL = f"{BACKEND_BASE_URL}/optimize"
@@ -26,6 +26,9 @@ if 'analysis_report' not in st.session_state:
     st.session_state.analysis_report = None
 if 'optimization_report' not in st.session_state:
     st.session_state.optimization_report = None
+# <<< NOVO: Adiciona uma chave para o campo de texto para podermos limpá-lo
+if 'url_input' not in st.session_state:
+    st.session_state.url_input = ""
 
 # --- Formulário de Entrada na Barra Lateral ---
 with st.sidebar:
@@ -33,11 +36,27 @@ with st.sidebar:
     with st.form("product_form"):
         amazon_url = st.text_input(
             "Cole a URL do produto da Amazon",
-            placeholder="https://www.amazon.com.br/dp/ASIN..."
+            placeholder="https://www.amazon.com.br/dp/ASIN...",
+            key="url_input" # <<< NOVO: Associa o campo de texto a uma chave no estado
         )
-        submitted = st.form_submit_button("Buscar Produto", type="primary", use_container_width=True)
+        
+        # <<< NOVO: Colunas para os botões ficarem lado a lado
+        col1, col2 = st.columns(2)
+        with col1:
+            submitted = st.form_submit_button("Buscar", type="primary", use_container_width=True)
+        with col2:
+            cleared = st.form_submit_button("Limpar", use_container_width=True)
 
 # --- Lógica de Processamento Principal ---
+
+# <<< NOVO: Lógica para o botão de limpar
+if cleared:
+    st.session_state.product_info = None
+    st.session_state.analysis_report = None
+    st.session_state.optimization_report = None
+    st.session_state.url_input = "" # Limpa o texto da caixa de entrada
+    # O Streamlit irá re-renderizar a página, e como os estados estão limpos, a tela ficará vazia.
+
 if submitted and not amazon_url:
     st.warning("Por favor, insira uma URL da Amazon para começar.")
 
@@ -103,7 +122,8 @@ if st.session_state.product_info:
         if st.button("Gerar Listing Otimizado com IA", key="optimize_btn", use_container_width=True):
             with st.spinner("A IA está trabalhando para criar seu listing otimizado... Isso pode levar um minuto. 🧠"):
                 try:
-                    payload = {"amazon_url": amazon_url.strip()}
+                    # Usa a URL que está no estado da sessão para garantir consistência
+                    payload = {"amazon_url": st.session_state.url_input.strip()}
                     response = requests.post(OPTIMIZE_URL, json=payload, timeout=180) # Maior timeout
                     response.raise_for_status()
                     st.session_state.optimization_report = response.json().get('optimized_listing_report')
