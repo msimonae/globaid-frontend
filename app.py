@@ -62,7 +62,7 @@ if submitted and amazon_url:
     
     with st.spinner("Buscando informações básicas do produto... 🤖"):
         try:
-            # <<< CORREÇÃO 1: Higieniza a URL antes de enviar para a API
+            # Higieniza a URL para garantir que tenha o prefixo https://
             sanitized_url = amazon_url.strip()
             if not sanitized_url.startswith(('http://', 'https://')):
                 sanitized_url = 'https://' + sanitized_url
@@ -95,6 +95,7 @@ if st.session_state.product_info:
         if info.get("product_image_url"):
             st.image(info["product_image_url"], caption="Imagem Principal")
     with col2:
+        # Esta linha agora funcionará corretamente com a API ajustada
         st.subheader(info.get("product_title", "Título não encontrado"))
         st.info(f"**ASIN:** `{info.get('asin', 'N/A')}` | **Mercado:** `{info.get('country', 'N/A')}`")
 
@@ -119,7 +120,7 @@ if st.session_state.product_info:
         if st.button("Gerar Listing Otimizado com IA", key="optimize_btn", use_container_width=True):
             with st.spinner("A IA está trabalhando para criar seu listing otimizado... Isso pode levar um minuto. 🧠"):
                 try:
-                    # <<< CORREÇÃO 2: Higieniza a URL aqui também
+                    # Higieniza a URL aqui também
                     sanitized_url = st.session_state.url_input.strip()
                     if not sanitized_url.startswith(('http://', 'https://')):
                         sanitized_url = 'https://' + sanitized_url
