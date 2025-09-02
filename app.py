@@ -62,7 +62,12 @@ if submitted and amazon_url:
     
     with st.spinner("Buscando informações básicas do produto... 🤖"):
         try:
-            payload = {"amazon_url": amazon_url.strip()}
+            # <<< CORREÇÃO 1: Higieniza a URL antes de enviar para a API
+            sanitized_url = amazon_url.strip()
+            if not sanitized_url.startswith(('http://', 'https://')):
+                sanitized_url = 'https://' + sanitized_url
+
+            payload = {"amazon_url": sanitized_url}
             response = requests.post(ANALYZE_URL, json=payload, timeout=120)
             response.raise_for_status()
             
@@ -70,12 +75,9 @@ if submitted and amazon_url:
             st.session_state.analysis_report = st.session_state.product_info.get('report')
 
         except requests.exceptions.HTTPError as e:
-            # <<< CORREÇÃO: Bloco para tratar o erro de JSON de forma segura
             try:
-                # Tenta ler o detalhe do erro do JSON, que é o esperado da nossa API
                 error_details = e.response.json().get("detail", "Erro desconhecido do servidor.")
             except requests.exceptions.JSONDecodeError:
-                # Se falhar (resposta não é JSON), mostra o texto bruto da resposta
                 error_details = e.response.text
             st.error(f"Ocorreu um erro na API ao buscar o produto: {error_details}")
             st.session_state.product_info = None
@@ -117,12 +119,16 @@ if st.session_state.product_info:
         if st.button("Gerar Listing Otimizado com IA", key="optimize_btn", use_container_width=True):
             with st.spinner("A IA está trabalhando para criar seu listing otimizado... Isso pode levar um minuto. 🧠"):
                 try:
-                    payload = {"amazon_url": st.session_state.url_input.strip()}
+                    # <<< CORREÇÃO 2: Higieniza a URL aqui também
+                    sanitized_url = st.session_state.url_input.strip()
+                    if not sanitized_url.startswith(('http://', 'https://')):
+                        sanitized_url = 'https://' + sanitized_url
+                        
+                    payload = {"amazon_url": sanitized_url}
                     response = requests.post(OPTIMIZE_URL, json=payload, timeout=180)
                     response.raise_for_status()
                     st.session_state.optimization_report = response.json().get('optimized_listing_report')
                 except requests.exceptions.HTTPError as e:
-                    # <<< CORREÇÃO: Mesmo tratamento seguro de erro aqui
                     try:
                         error_details = e.response.json().get("detail", "Erro desconhecido do servidor.")
                     except requests.exceptions.JSONDecodeError:
