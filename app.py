@@ -6,7 +6,7 @@ from fpdf import FPDF
 import os
 from io import BytesIO
 
-# --- FUNÇÃO PARA GERAR O PDF (CORRIGIDA) ---
+# --- FUNÇÃO PARA GERAR O PDF ---
 def create_pdf_report(info: dict, product_url: str):
     """Cria um relatório em PDF com título, texto e imagens do produto."""
     pdf = FPDF()
@@ -30,7 +30,6 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.cell(0, 10, "Relatório de Análise de Produto", ln=True, align='C')
     
     pdf.set_font(font_name, '', 12)
-    # <<< CORREÇÃO: Adicionado align='C' para centralizar Título, ASIN e URL
     pdf.multi_cell(effective_page_width, 10, f"Título: {info.get('product_title', 'N/A')}", align='C')
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}", align='C')
     pdf.multi_cell(effective_page_width, 8, f"URL: {product_url}", align='C')
@@ -39,7 +38,7 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências Gerado por IA", align='C', ln=True)
     pdf.set_font(font_name, '', 11)
-    pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.')) # Corpo do texto mantido à esquerda
+    pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.'))
     pdf.ln(10)
 
     pdf.set_font(font_name, bold_style, 14)
@@ -163,6 +162,22 @@ if st.session_state.product_info:
         report_text = info.get('report', 'Não foi possível gerar o relatório de análise.')
         with st.expander("Ver Relatório de Análise", expanded=True):
             st.markdown(report_text)
+
+        # <<< NOVO: Seção para exibir as imagens do produto na tela
+        st.divider()
+        st.subheader("Imagens Analisadas no Relatório")
+        
+        image_urls = info.get('product_photos', [])
+        if image_urls:
+            # Define o número de colunas para a galeria de imagens
+            num_columns = 4
+            cols = st.columns(num_columns)
+            # Itera sobre as imagens e as coloca nas colunas
+            for i, url in enumerate(image_urls):
+                with cols[i % num_columns]:
+                    st.image(url, caption=f"Imagem {i+1}", use_column_width=True)
+        else:
+            st.info("Nenhuma imagem de produto foi retornada pela API para exibição.")
         
         st.divider()
         st.subheader("Download do Relatório")
