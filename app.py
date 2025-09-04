@@ -74,17 +74,11 @@ BACKEND_BASE_URL = "https://globald.onrender.com"
 ANALYZE_URL = f"{BACKEND_BASE_URL}/analyze"
 OPTIMIZE_URL = f"{BACKEND_BASE_URL}/optimize"
 
-# --- CORREÇÃO: Bloco de inicialização do Estado da Sessão ---
-# Este bloco GARANTE que as variáveis de estado sempre existam,
-# evitando o AttributeError na primeira execução do app.
-if 'product_info' not in st.session_state:
-    st.session_state.product_info = None
-if 'analysis_report' not in st.session_state:
-    st.session_state.analysis_report = None
-if 'optimization_report' not in st.session_state:
-    st.session_state.optimization_report = None
-if 'url_input' not in st.session_state:
-    st.session_state.url_input = ""
+# ESTADO DA SESSÃO
+if 'product_info' not in st.session_state: st.session_state.product_info = None
+if 'analysis_report' not in st.session_state: st.session_state.analysis_report = None
+if 'optimization_report' not in st.session_state: st.session_state.optimization_report = None
+if 'url_input' not in st.session_state: st.session_state.url_input = ""
 
 # --- FORMULÁRIO NA BARRA LATERAL ---
 with st.sidebar:
@@ -137,8 +131,6 @@ if submitted and amazon_url:
             st.session_state.product_info = None
 
 # EXIBIÇÃO DOS RESULTADOS
-# Esta verificação agora é segura, pois 'product_info' sempre existe.
-# O código dentro do 'if' só roda se 'product_info' não for None.
 if st.session_state.product_info:
     info = st.session_state.product_info
     
@@ -161,27 +153,20 @@ if st.session_state.product_info:
         with st.expander("Ver Relatório de Análise", expanded=True):
             st.markdown(report_text)
 
+        # <<< CORREÇÃO: Lógica de filtragem removida para exibir TODAS as imagens
         st.divider()
-        st.subheader("Imagens Relevantes à Análise")
+        st.subheader("Imagens do Produto Analisadas")
         
         all_image_urls = info.get('product_photos', [])
         
-        try:
-            cited_numbers = re.findall(r'Imagem (\d+)', report_text, re.IGNORECASE)
-            cited_indices = {int(num) - 1 for num in cited_numbers}
-            relevant_images = [all_image_urls[i] for i in sorted(list(cited_indices)) if i < len(all_image_urls)]
-        except Exception as e:
-            print(f"Erro ao processar o relatório para extrair imagens: {e}")
-            relevant_images = []
-
-        if relevant_images:
+        if all_image_urls:
             num_columns = 4
             cols = st.columns(num_columns)
-            for i, url in enumerate(relevant_images):
+            for i, url in enumerate(all_image_urls):
                 with cols[i % num_columns]:
-                    st.image(url, caption=f"Imagem Relevante {i+1}", use_container_width=True)
+                    st.image(url, caption=f"Imagem {i+1}", use_container_width=True)
         else:
-            st.info("A análise da IA não apontou uma imagem específica para a inconsistência descrita, ou não houve inconsistência.")
+            st.info("Nenhuma imagem de produto foi retornada pela API para exibição.")
         
         st.divider()
         st.subheader("Download do Relatório")
@@ -199,7 +184,7 @@ if st.session_state.product_info:
         st.markdown("Gere um listing completo otimizado para os algoritmos da Amazon e para conversão de vendas.")
         
         if st.button("Gerar Listing Otimizado com IA", key="optimize_btn", use_container_width=True):
-            with st.spinner("A IA está trabalhando para criar seu listing otimizado... Isso pode levar um minuto. 🧠"):
+            with st.spinner("A IA está trabalhando para criar seu listing otimizado... 🧠"):
                 try:
                     sanitized_url = st.session_state.url_input.strip()
                     if not sanitized_url.startswith(('http://', 'https://')):
