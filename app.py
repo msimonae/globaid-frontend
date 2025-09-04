@@ -11,9 +11,10 @@ def create_pdf_report(info: dict):
     pdf = FPDF()
     pdf.add_page()
 
-    # --- CORREÇÃO: Define o nome da fonte em uma variável para uso consistente ---
-    font_name = 'Arial' # Começa com uma fonte padrão segura
+    # Define o nome da fonte em uma variável e o estilo padrão
+    font_name = 'Arial'
     font_path = 'DejaVuSans.ttf'
+    
     if os.path.exists(font_path):
         try:
             pdf.add_font('DejaVu', '', font_path, uni=True)
@@ -23,30 +24,33 @@ def create_pdf_report(info: dict):
     else:
         st.warning("Arquivo de fonte 'DejaVuSans.ttf' não encontrado. Acentos no PDF podem não ser exibidos corretamente.")
 
-    pdf.set_font(font_name, 'B', 16) # Usa a variável font_name
+    # --- CORREÇÃO: Define o estilo 'Negrito' apenas se a fonte for Arial ---
+    bold_style = 'B' if font_name == 'Arial' else ''
+
+    pdf.set_font(font_name, bold_style, 16)
 
     # Título do Produto
     pdf.cell(0, 10, "Relatório de Análise do Produto", ln=True, align='C')
-    pdf.set_font(font_name, '', 12)
+    pdf.set_font(font_name, '', 12) # Estilo regular para o texto normal
     effective_page_width = pdf.w - 2 * pdf.l_margin
     pdf.multi_cell(effective_page_width, 10, f"Título: {info.get('product_title', 'N/A')}")
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}")
     pdf.ln(10)
     
     # Relatório de Inconsistências
-    pdf.set_font(font_name, 'B', 14) # Usa a variável font_name
+    pdf.set_font(font_name, bold_style, 14) # Usa o estilo negrito seguro
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências Gerado por IA")
-    pdf.set_font(font_name, '', 11) # Usa a variável font_name
+    pdf.set_font(font_name, '', 11) # Estilo regular para o corpo do relatório
     pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.'))
     pdf.ln(10)
 
     # Imagens do Produto
-    pdf.set_font(font_name, 'B', 14) # Usa a variável font_name
+    pdf.set_font(font_name, bold_style, 14) # Usa o estilo negrito seguro
     pdf.multi_cell(effective_page_width, 10, "Imagens do Produto")
     
     image_urls = info.get('product_photos', [])
     if not image_urls:
-        pdf.set_font(font_name, '', 11) # Usa a variável font_name
+        pdf.set_font(font_name, '', 11)
         pdf.multi_cell(effective_page_width, 10, "Nenhuma imagem adicional encontrada.")
 
     for i, url in enumerate(image_urls):
@@ -57,7 +61,7 @@ def create_pdf_report(info: dict):
             pdf.ln(5)
         except Exception as e:
             pdf.set_text_color(255, 0, 0)
-            pdf.set_font(font_name, '', 10) # Usa a variável font_name
+            pdf.set_font(font_name, '', 10)
             pdf.multi_cell(effective_page_width, 10, f"Erro ao carregar imagem {i+1}")
             pdf.set_text_color(0, 0, 0)
             print(f"Erro ao baixar imagem para PDF: {e}")
@@ -163,7 +167,6 @@ if st.session_state.product_info:
         st.divider()
         st.subheader("Download do Relatório")
         
-        # A geração do PDF agora é mais segura e não deve mais causar erro
         pdf_bytes = create_pdf_report(info)
         st.download_button(
             label="📄 Baixar Relatório em PDF",
