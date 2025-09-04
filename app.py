@@ -4,6 +4,7 @@ import requests
 import io
 from fpdf import FPDF
 import os
+from io import BytesIO
 
 # --- FUNÇÃO PARA GERAR O PDF (CORRIGIDA) ---
 def create_pdf_report(info: dict):
@@ -23,11 +24,11 @@ def create_pdf_report(info: dict):
         st.warning("Arquivo de fonte 'DejaVuSans.ttf' não encontrado. Acentos no PDF podem não ser exibidos corretamente.")
 
     bold_style = 'B' if font_name == 'Arial' else ''
-
-    pdf.set_font(font_name, bold_style, 16)
     effective_page_width = pdf.w - 2 * pdf.l_margin
 
+    pdf.set_font(font_name, bold_style, 16)
     pdf.cell(0, 10, "Relatório de Análise do Produto", ln=True, align='C')
+    
     pdf.set_font(font_name, '', 12)
     pdf.multi_cell(effective_page_width, 10, f"Título: {info.get('product_title', 'N/A')}")
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}")
@@ -60,8 +61,9 @@ def create_pdf_report(info: dict):
             pdf.set_text_color(0, 0, 0)
             print(f"Erro ao baixar imagem para PDF: {e}")
 
-    # <<< CORREÇÃO: Remove o .encode('latin-1') desnecessário
-    return pdf.output()
+    # <<< CORREÇÃO: Retorna um objeto de arquivo em memória (BytesIO) em vez de bytes brutos.
+    pdf_bytes = pdf.output()
+    return BytesIO(pdf_bytes)
 
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
@@ -162,10 +164,11 @@ if st.session_state.product_info:
         st.divider()
         st.subheader("Download do Relatório")
         
-        pdf_bytes = create_pdf_report(info)
+        # A função agora retorna um objeto de arquivo que o Streamlit aceita sem erros
+        pdf_file = create_pdf_report(info)
         st.download_button(
             label="📄 Baixar Relatório em PDF",
-            data=pdf_bytes,
+            data=pdf_file,
             file_name=f"relatorio_analise_{info.get('asin', 'produto')}.pdf",
             mime="application/pdf"
         )
