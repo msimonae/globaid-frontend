@@ -26,44 +26,53 @@ def create_pdf_report(info: dict):
     bold_style = 'B' if font_name == 'Arial' else ''
     effective_page_width = pdf.w - 2 * pdf.l_margin
 
+    # --- TÍTULO PRINCIPAL (JÁ ESTAVA CENTRALIZADO) ---
     pdf.set_font(font_name, bold_style, 16)
     pdf.cell(0, 10, "Relatório de Análise do Produto", ln=True, align='C')
     
+    # Informações do Produto (mantido alinhado à esquerda para clareza)
     pdf.set_font(font_name, '', 12)
     pdf.multi_cell(effective_page_width, 10, f"Título: {info.get('product_title', 'N/A')}")
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}")
     pdf.ln(10)
     
+    # --- CABEÇALHO DO RELATÓRIO (AGORA CENTRALIZADO) ---
     pdf.set_font(font_name, bold_style, 14)
-    pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências Gerado por IA")
+    pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências Gerado por IA", align='C', ln=True)
+    
+    # Corpo do Relatório (mantido à esquerda para legibilidade)
     pdf.set_font(font_name, '', 11)
     pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.'))
     pdf.ln(10)
 
+    # --- CABEÇALHO DAS IMAGENS (AGORA CENTRALIZADO) ---
     pdf.set_font(font_name, bold_style, 14)
-    pdf.multi_cell(effective_page_width, 10, "Imagens do Produto")
+    pdf.multi_cell(effective_page_width, 10, "Imagens do Produto", align='C', ln=True)
     
     image_urls = info.get('product_photos', [])
     if not image_urls:
         pdf.set_font(font_name, '', 11)
         pdf.multi_cell(effective_page_width, 10, "Nenhuma imagem adicional encontrada.")
 
+    # --- IMAGENS (AGORA CENTRALIZADAS) ---
+    image_width = 150  # Define uma largura padrão para as imagens
+    image_x_pos = (pdf.w - image_width) / 2 # Calcula a posição X para centralizar
+
     for i, url in enumerate(image_urls):
         try:
             response = requests.get(url, timeout=20)
             response.raise_for_status()
-            pdf.image(io.BytesIO(response.content), w=150)
+            # Usa a posição X calculada para centralizar a imagem
+            pdf.image(io.BytesIO(response.content), x=image_x_pos, w=image_width)
             pdf.ln(5)
         except Exception as e:
             pdf.set_text_color(255, 0, 0)
             pdf.set_font(font_name, '', 10)
-            pdf.multi_cell(effective_page_width, 10, f"Erro ao carregar imagem {i+1}")
+            pdf.multi_cell(effective_page_width, 10, f"Erro ao carregar imagem {i+1}", align='C')
             pdf.set_text_color(0, 0, 0)
             print(f"Erro ao baixar imagem para PDF: {e}")
 
-    # <<< CORREÇÃO: Retorna um objeto de arquivo em memória (BytesIO) em vez de bytes brutos.
-    pdf_bytes = pdf.output()
-    return BytesIO(pdf_bytes)
+    return BytesIO(pdf.output())
 
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
@@ -164,7 +173,6 @@ if st.session_state.product_info:
         st.divider()
         st.subheader("Download do Relatório")
         
-        # A função agora retorna um objeto de arquivo que o Streamlit aceita sem erros
         pdf_file = create_pdf_report(info)
         st.download_button(
             label="📄 Baixar Relatório em PDF",
