@@ -7,7 +7,7 @@ import os
 from io import BytesIO
 
 # --- FUNÇÃO PARA GERAR O PDF (CORRIGIDA) ---
-def create_pdf_report(info: dict):
+def create_pdf_report(info: dict, product_url: str):
     """Cria um relatório em PDF com título, texto e imagens do produto."""
     pdf = FPDF()
     pdf.add_page()
@@ -26,26 +26,23 @@ def create_pdf_report(info: dict):
     bold_style = 'B' if font_name == 'Arial' else ''
     effective_page_width = pdf.w - 2 * pdf.l_margin
 
-    # --- TÍTULO PRINCIPAL (JÁ ESTAVA CENTRALIZADO) ---
     pdf.set_font(font_name, bold_style, 16)
-    pdf.cell(0, 10, "Relatório de Análise do Produto", ln=True, align='C')
+    pdf.cell(0, 10, "Relatório de Análise de Produto", ln=True, align='C')
     
-    # Informações do Produto (mantido alinhado à esquerda para clareza)
     pdf.set_font(font_name, '', 12)
     pdf.multi_cell(effective_page_width, 10, f"Título: {info.get('product_title', 'N/A')}")
+    
+    # <<< NOVO: Adiciona ASIN e URL ao relatório
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}")
+    pdf.multi_cell(effective_page_width, 8, f"URL: {product_url}")
     pdf.ln(10)
     
-    # --- CABEÇALHO DO RELATÓRIO (AGORA CENTRALIZADO) ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências Gerado por IA", align='C', ln=True)
-    
-    # Corpo do Relatório (mantido à esquerda para legibilidade)
     pdf.set_font(font_name, '', 11)
     pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.'))
     pdf.ln(10)
 
-    # --- CABEÇALHO DAS IMAGENS (AGORA CENTRALIZADO) ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Imagens do Produto", align='C', ln=True)
     
@@ -54,15 +51,13 @@ def create_pdf_report(info: dict):
         pdf.set_font(font_name, '', 11)
         pdf.multi_cell(effective_page_width, 10, "Nenhuma imagem adicional encontrada.")
 
-    # --- IMAGENS (AGORA CENTRALIZADAS) ---
-    image_width = 150  # Define uma largura padrão para as imagens
-    image_x_pos = (pdf.w - image_width) / 2 # Calcula a posição X para centralizar
+    image_width = 150
+    image_x_pos = (pdf.w - image_width) / 2
 
     for i, url in enumerate(image_urls):
         try:
             response = requests.get(url, timeout=20)
             response.raise_for_status()
-            # Usa a posição X calculada para centralizar a imagem
             pdf.image(io.BytesIO(response.content), x=image_x_pos, w=image_width)
             pdf.ln(5)
         except Exception as e:
@@ -77,12 +72,14 @@ def create_pdf_report(info: dict):
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
 st.set_page_config(
-    page_title="AI Product Genius para Amazon",
+    # <<< NOVO: Nome do aplicativo alterado
+    page_title="GlobalD IA Compliance para Amazon",
     page_icon="🚀",
     layout="wide"
 )
 
-st.title("🚀 AI Product Genius para Amazon")
+# <<< NOVO: Nome do aplicativo alterado
+st.title("🚀 GlobalD IA Compliance para Amazon")
 st.markdown("Uma ferramenta de IA para **Analisar Inconsistências** e **Otimizar Listings** de produtos.")
 
 # URLs DA API
@@ -173,7 +170,8 @@ if st.session_state.product_info:
         st.divider()
         st.subheader("Download do Relatório")
         
-        pdf_file = create_pdf_report(info)
+        # <<< NOVO: Passa a URL do produto para a função de gerar o PDF
+        pdf_file = create_pdf_report(info, st.session_state.url_input)
         st.download_button(
             label="📄 Baixar Relatório em PDF",
             data=pdf_file,
