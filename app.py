@@ -30,17 +30,16 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.cell(0, 10, "Relatório de Análise de Produto", ln=True, align='C')
     
     pdf.set_font(font_name, '', 12)
-    pdf.multi_cell(effective_page_width, 10, f"Título: {info.get('product_title', 'N/A')}")
-    
-    # <<< NOVO: Adiciona ASIN e URL ao relatório
-    pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}")
-    pdf.multi_cell(effective_page_width, 8, f"URL: {product_url}")
+    # <<< CORREÇÃO: Adicionado align='C' para centralizar Título, ASIN e URL
+    pdf.multi_cell(effective_page_width, 10, f"Título: {info.get('product_title', 'N/A')}", align='C')
+    pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}", align='C')
+    pdf.multi_cell(effective_page_width, 8, f"URL: {product_url}", align='C')
     pdf.ln(10)
     
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências Gerado por IA", align='C', ln=True)
     pdf.set_font(font_name, '', 11)
-    pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.'))
+    pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.')) # Corpo do texto mantido à esquerda
     pdf.ln(10)
 
     pdf.set_font(font_name, bold_style, 14)
@@ -72,13 +71,11 @@ def create_pdf_report(info: dict, product_url: str):
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
 st.set_page_config(
-    # <<< NOVO: Nome do aplicativo alterado
     page_title="GlobalD IA Compliance para Amazon",
     page_icon="🚀",
     layout="wide"
 )
 
-# <<< NOVO: Nome do aplicativo alterado
 st.title("🚀 GlobalD IA Compliance para Amazon")
 st.markdown("Uma ferramenta de IA para **Analisar Inconsistências** e **Otimizar Listings** de produtos.")
 
@@ -170,7 +167,6 @@ if st.session_state.product_info:
         st.divider()
         st.subheader("Download do Relatório")
         
-        # <<< NOVO: Passa a URL do produto para a função de gerar o PDF
         pdf_file = create_pdf_report(info, st.session_state.url_input)
         st.download_button(
             label="📄 Baixar Relatório em PDF",
