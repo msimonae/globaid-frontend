@@ -10,10 +10,9 @@ import re
 # --- FUNÇÃO PARA GERAR O PDF ---
 # (A função create_pdf_report não precisa de alterações)
 def create_pdf_report(info: dict, product_url: str):
-    """Cria um relatório em PDF com layout aprimorado e formatação de negrito corrigida."""
+    """Cria um relatório em PDF com layout aprimorado e formatação de negrito."""
     pdf = FPDF()
     pdf.add_page()
-
     font_name = 'Arial'
     font_path = 'DejaVuSans.ttf'
     if os.path.exists(font_path):
@@ -24,11 +23,8 @@ def create_pdf_report(info: dict, product_url: str):
             st.warning(f"Não foi possível carregar a fonte 'DejaVuSans.ttf': {e}. Usando fonte padrão.")
     else:
         st.warning("Arquivo de fonte 'DejaVuSans.ttf' não encontrado. Acentos no PDF podem não ser exibidos corretamente.")
-
     bold_style = 'B' if font_name == 'Arial' else ''
     effective_page_width = pdf.w - 2 * pdf.l_margin
-
-    # --- Bloco de Branding ---
     logo_path = 'globald_logo_512x512_original.jpg'
     if os.path.exists(logo_path):
         logo_width = 40
@@ -37,12 +33,9 @@ def create_pdf_report(info: dict, product_url: str):
         pdf.ln(5)
     else:
         st.warning(f"Arquivo do logo '{logo_path}' não encontrado. O PDF será gerado sem o logo.")
-
     pdf.set_font(font_name, '', 10)
     pdf.cell(0, 10, 'AI Compliance Relatório by www.GlobalD.ai', ln=True, align='C')
     pdf.ln(5)
-
-    # --- Bloco de Informações do Produto ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 8, info.get('product_title', 'N/A'), align='C')
     pdf.ln(3)
@@ -56,43 +49,28 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.set_font(font_name, '', 12)
     pdf.set_text_color(0, 0, 0)
     pdf.ln(8)
-    
-    # --- Bloco de Análise de Inconsistências ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências e Melhorias", align='C', ln=True)
     pdf.set_font(font_name, '', 11)
-    
-    # <<< CORREÇÃO: Lógica para processar e renderizar o negrito do Markdown
     report_text = info.get('report', 'Nenhum relatório disponível.')
-    
-    # Processa o relatório linha por linha para manter a formatação original
     for line in report_text.split('\n'):
-        # Divide a linha pelo delimitador de negrito "**"
         parts = line.split('**')
         for i, part in enumerate(parts):
-            if not part: continue # Pula partes vazias que podem surgir da divisão
-            
-            # Partes com índice ímpar (1, 3, 5...) estavam dentro de "**"
+            if not part: continue
             if i % 2 == 1:
-                pdf.set_font(font_name, bold_style, 11) # Aplica o estilo negrito
+                pdf.set_font(font_name, bold_style, 11)
                 pdf.write(5, part)
-                pdf.set_font(font_name, '', 11) # Retorna ao estilo normal
+                pdf.set_font(font_name, '', 11)
             else:
                 pdf.write(5, part)
-        pdf.ln() # Adiciona uma quebra de linha no final de cada linha processada do relatório
-    
+        pdf.ln()
     pdf.ln(10)
-    # --- Fim da Correção ---
-    
-    # --- Bloco de Imagens do Produto ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Imagens do Produto", align='C', ln=True)
-    
     image_urls = info.get('product_photos', [])
     if not image_urls:
         pdf.set_font(font_name, '', 11)
         pdf.multi_cell(effective_page_width, 10, "Nenhuma imagem adicional encontrada.")
-
     image_width = 120
     image_x_pos = (pdf.w - image_width) / 2
     for i, url in enumerate(image_urls):
@@ -107,18 +85,15 @@ def create_pdf_report(info: dict, product_url: str):
             pdf.multi_cell(effective_page_width, 10, f"Erro ao carregar imagem {i+1}", align='C')
             pdf.set_text_color(0, 0, 0)
             print(f"Erro ao baixar imagem para PDF: {e}")
-
     return BytesIO(pdf.output())
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
-# (O restante do código do app.py não precisa de alterações)
 st.set_page_config(
     page_title="GlobalD IA Compliance para Amazon",
     page_icon="🚀",
     layout="wide"
 )
 st.title("🚀 GlobalD IA Compliance para Amazon")
-
 st.markdown("Uma ferramenta de IA para **Analisar Inconsistências** e **Otimizar Listings** de produtos.")
 
 # URLs DA API
@@ -202,10 +177,11 @@ if st.session_state.product_info:
     with tab1:
         st.header("Verificação de Consistência entre Texto e Imagens")
         report_text = info.get('report', 'Não foi possível gerar o relatório de análise.')
+        
+        # <<< CORREÇÃO: Garante que st.markdown seja usado para renderizar o negrito
         with st.expander("Ver Relatório de Análise", expanded=True):
-            st.markdown(report_text)
+            st.markdown(report_text, unsafe_allow_html=True)
 
-        # <<< CORREÇÃO: Lógica de filtragem removida para exibir TODAS as imagens
         st.divider()
         st.subheader("Imagens do Produto Analisadas")
         
@@ -258,6 +234,7 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
