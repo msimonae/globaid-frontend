@@ -10,7 +10,7 @@ import re
 # --- FUNÇÃO PARA GERAR O PDF ---
 # (A função create_pdf_report não precisa de alterações)
 def create_pdf_report(info: dict, product_url: str):
-    """Cria um relatório em PDF com layout aprimorado e link do produto funcional."""
+    """Cria um relatório em PDF com layout e hyperlink corrigidos."""
     pdf = FPDF()
     pdf.add_page()
 
@@ -42,25 +42,26 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.cell(0, 10, 'AI Compliance Relatório by www.GlobalD.ai', ln=True, align='C')
     pdf.ln(5)
 
-    # --- Bloco de Informações do Produto ---
-    pdf.set_font(font_name, bold_style, 16)
-    pdf.multi_cell(effective_page_width, 10, info.get('product_title', 'N/A'), align='C')
-    pdf.set_font(font_name, '', 12)
-    pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}", align='C')
-    
-    # <<< CORREÇÃO: Bloco simplificado e robusto para adicionar o link do produto
-    pdf.set_font(font_name, 'U', 11)  # Define estilo para sublinhado
-    pdf.set_text_color(0, 0, 255)   # Define a cor do texto para azul
-    
-    # Adiciona a célula com o texto da URL, que também é o link clicável
-    pdf.multi_cell(effective_page_width, 8, txt=product_url, link=product_url, align='C')
-    
-    # Reseta a fonte e a cor para o restante do documento
-    pdf.set_font(font_name, '', 12)
+    # --- Bloco de Informações do Produto (Layout Corrigido) ---
+    pdf.set_font(font_name, bold_style, 14)
+    # <<< CORREÇÃO: Altura da célula (h) reduzida para diminuir espaçamento
+    pdf.multi_cell(effective_page_width, 8, info.get('product_title', 'N/A'), align='C') 
+
+    # <<< CORREÇÃO: Link clicável posicionado logo após o título
+    pdf.set_font(font_name, 'U', 10)
+    pdf.set_text_color(0, 0, 255)
+    # Altura da célula (h) pequena para o link
+    pdf.multi_cell(effective_page_width, 6, txt=product_url, link=product_url, align='C')
     pdf.set_text_color(0, 0, 0)
-    pdf.ln(10)
-    # --- Fim da Correção ---
+
+    # ASIN logo abaixo do link
+    pdf.set_font(font_name, '', 11)
+    # Altura da célula (h) reduzida
+    pdf.multi_cell(effective_page_width, 6, f"ASIN: {info.get('asin', 'N/A')}", align='C')
     
+    # Espaçamento controlado antes da próxima seção
+    pdf.ln(8) 
+
     # --- Bloco de Análise de Inconsistências ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências e Melhorias", align='C', ln=True)
@@ -77,7 +78,7 @@ def create_pdf_report(info: dict, product_url: str):
         pdf.set_font(font_name, '', 11)
         pdf.multi_cell(effective_page_width, 10, "Nenhuma imagem adicional encontrada.")
 
-    image_width = 120 # Tamanho reduzido conforme solicitado anteriormente
+    image_width = 120
     image_x_pos = (pdf.w - image_width) / 2
     for i, url in enumerate(image_urls):
         try:
@@ -242,6 +243,7 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
