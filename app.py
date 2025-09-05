@@ -10,7 +10,7 @@ import re
 # --- FUNÇÃO PARA GERAR O PDF ---
 # (A função create_pdf_report não precisa de alterações)
 def create_pdf_report(info: dict, product_url: str):
-    """Cria um relatório em PDF com layout aprimorado, incluindo imagem e link do produto."""
+    """Cria um relatório em PDF com layout aprimorado e link do produto funcional."""
     pdf = FPDF()
     pdf.add_page()
 
@@ -47,36 +47,19 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.multi_cell(effective_page_width, 10, info.get('product_title', 'N/A'), align='C')
     pdf.set_font(font_name, '', 12)
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}", align='C')
-    pdf.ln(5)
-
-    # <<< CORREÇÃO 1: Bloco para adicionar imagem pequena e o link clicável com a URL visível
-    main_image_url = info.get('product_image_url')
-    if main_image_url:
-        try:
-            response = requests.get(main_image_url, timeout=20)
-            response.raise_for_status()
-            
-            img_size = 20
-            y_before = pdf.get_y()
-            # Posiciona a imagem pequena à esquerda
-            pdf.image(io.BytesIO(response.content), x=pdf.l_margin, y=y_before, w=img_size, h=img_size)
-
-            # Posiciona o cursor ao lado da imagem para escrever o link
-            pdf.set_xy(pdf.l_margin + img_size + 5, y_before + (img_size / 2.5))
-            
-            # Adiciona o link clicável, usando a própria URL como texto
-            pdf.set_font(font_name, 'U', 10) # Fonte menor para a URL
-            pdf.set_text_color(0, 0, 255)
-            # O método 'write' é bom para textos longos que podem quebrar a linha
-            pdf.write(5, txt=product_url, link=product_url)
-            
-            # Reseta a fonte, a cor e a posição do cursor
-            pdf.set_font(font_name, '', 12)
-            pdf.set_text_color(0, 0, 0)
-            pdf.set_y(y_before + img_size + 5) # Garante que o cursor pule para baixo da imagem
-
-        except Exception as e:
-            print(f"Erro ao adicionar imagem/link do produto ao PDF: {e}")
+    
+    # <<< CORREÇÃO: Bloco simplificado e robusto para adicionar o link do produto
+    pdf.set_font(font_name, 'U', 11)  # Define estilo para sublinhado
+    pdf.set_text_color(0, 0, 255)   # Define a cor do texto para azul
+    
+    # Adiciona a célula com o texto da URL, que também é o link clicável
+    pdf.multi_cell(effective_page_width, 8, txt=product_url, link=product_url, align='C')
+    
+    # Reseta a fonte e a cor para o restante do documento
+    pdf.set_font(font_name, '', 12)
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(10)
+    # --- Fim da Correção ---
     
     # --- Bloco de Análise de Inconsistências ---
     pdf.set_font(font_name, bold_style, 14)
@@ -94,8 +77,7 @@ def create_pdf_report(info: dict, product_url: str):
         pdf.set_font(font_name, '', 11)
         pdf.multi_cell(effective_page_width, 10, "Nenhuma imagem adicional encontrada.")
 
-    # <<< CORREÇÃO 2: Largura das imagens da galeria foi reduzida
-    image_width = 120
+    image_width = 120 # Tamanho reduzido conforme solicitado anteriormente
     image_x_pos = (pdf.w - image_width) / 2
     for i, url in enumerate(image_urls):
         try:
@@ -260,6 +242,7 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
