@@ -10,7 +10,7 @@ import re
 # --- FUNÇÃO PARA GERAR O PDF ---
 # (A função create_pdf_report não precisa de alterações)
 def create_pdf_report(info: dict, product_url: str):
-    """Cria um relatório em PDF com branding e formatação de negrito corrigida."""
+    """Cria um relatório em PDF com layout aprimorado e formatação de negrito corrigida."""
     pdf = FPDF()
     pdf.add_page()
 
@@ -65,22 +65,22 @@ def create_pdf_report(info: dict, product_url: str):
     # <<< CORREÇÃO: Lógica para processar e renderizar o negrito do Markdown
     report_text = info.get('report', 'Nenhum relatório disponível.')
     
-    # Processa o relatório linha por linha para manter a formatação
+    # Processa o relatório linha por linha para manter a formatação original
     for line in report_text.split('\n'):
         # Divide a linha pelo delimitador de negrito "**"
         parts = line.split('**')
         for i, part in enumerate(parts):
-            if not part: continue # Pula partes vazias
+            if not part: continue # Pula partes vazias que podem surgir da divisão
             
-            # Partes com índice ímpar estavam dentro de "**"
+            # Partes com índice ímpar (1, 3, 5...) estavam dentro de "**"
             if i % 2 == 1:
-                pdf.set_font(font_name, bold_style, 11)
+                pdf.set_font(font_name, bold_style, 11) # Aplica o estilo negrito
                 pdf.write(5, part)
                 pdf.set_font(font_name, '', 11) # Retorna ao estilo normal
             else:
                 pdf.write(5, part)
-        pdf.ln() # Adiciona uma quebra de linha no final de cada linha do relatório
-
+        pdf.ln() # Adiciona uma quebra de linha no final de cada linha processada do relatório
+    
     pdf.ln(10)
     # --- Fim da Correção ---
     
@@ -109,7 +109,6 @@ def create_pdf_report(info: dict, product_url: str):
             print(f"Erro ao baixar imagem para PDF: {e}")
 
     return BytesIO(pdf.output())
-
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
 # (O restante do código do app.py não precisa de alterações)
@@ -259,6 +258,7 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
