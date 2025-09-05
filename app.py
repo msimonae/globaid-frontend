@@ -49,40 +49,34 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}", align='C')
     pdf.ln(5)
 
-    # <<< CORREÇÃO: Bloco para adicionar imagem pequena e link clicável
+    # <<< CORREÇÃO 1: Bloco para adicionar imagem pequena e o link clicável com a URL visível
     main_image_url = info.get('product_image_url')
     if main_image_url:
         try:
             response = requests.get(main_image_url, timeout=20)
             response.raise_for_status()
             
-            # Posiciona a imagem pequena
-            img_size = 20 # 20mm x 20mm
+            img_size = 20
             y_before = pdf.get_y()
+            # Posiciona a imagem pequena à esquerda
             pdf.image(io.BytesIO(response.content), x=pdf.l_margin, y=y_before, w=img_size, h=img_size)
 
-            # Posiciona o cursor ao lado da imagem
-            pdf.set_xy(pdf.l_margin + img_size + 5, y_before + (img_size / 4))
+            # Posiciona o cursor ao lado da imagem para escrever o link
+            pdf.set_xy(pdf.l_margin + img_size + 5, y_before + (img_size / 2.5))
             
-            # Adiciona o link clicável
-            pdf.set_font(font_name, 'U', 11)
+            # Adiciona o link clicável, usando a própria URL como texto
+            pdf.set_font(font_name, 'U', 10) # Fonte menor para a URL
             pdf.set_text_color(0, 0, 255)
-            pdf.cell(0, 10, "Acessar Página do Produto", link=product_url)
+            # O método 'write' é bom para textos longos que podem quebrar a linha
+            pdf.write(5, txt=product_url, link=product_url)
             
-            # Reseta a fonte e a cor
+            # Reseta a fonte, a cor e a posição do cursor
             pdf.set_font(font_name, '', 12)
             pdf.set_text_color(0, 0, 0)
-            pdf.ln(img_size) # Pula a linha para baixo da imagem
+            pdf.set_y(y_before + img_size + 5) # Garante que o cursor pule para baixo da imagem
 
         except Exception as e:
-            print(f"Erro ao adicionar imagem principal ao PDF: {e}")
-            # Se a imagem falhar, apenas escreve o link
-            pdf.set_font(font_name, 'U', 11)
-            pdf.set_text_color(0, 0, 255)
-            pdf.cell(0, 8, "Link do Produto", link=product_url, ln=True, align='C')
-            pdf.set_font(font_name, '', 12)
-            pdf.set_text_color(0, 0, 0)
-            pdf.ln(5)
+            print(f"Erro ao adicionar imagem/link do produto ao PDF: {e}")
     
     # --- Bloco de Análise de Inconsistências ---
     pdf.set_font(font_name, bold_style, 14)
@@ -100,7 +94,8 @@ def create_pdf_report(info: dict, product_url: str):
         pdf.set_font(font_name, '', 11)
         pdf.multi_cell(effective_page_width, 10, "Nenhuma imagem adicional encontrada.")
 
-    image_width = 150
+    # <<< CORREÇÃO 2: Largura das imagens da galeria foi reduzida
+    image_width = 120
     image_x_pos = (pdf.w - image_width) / 2
     for i, url in enumerate(image_urls):
         try:
@@ -265,6 +260,7 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
