@@ -10,7 +10,7 @@ import re
 # --- FUNÇÃO PARA GERAR O PDF ---
 # (A função create_pdf_report não precisa de alterações)
 def create_pdf_report(info: dict, product_url: str):
-    """Cria um relatório em PDF com branding, nova ordem e conteúdo completo."""
+    """Cria um relatório em PDF com layout e hyperlink corrigidos."""
     pdf = FPDF()
     pdf.add_page()
 
@@ -28,7 +28,7 @@ def create_pdf_report(info: dict, product_url: str):
     bold_style = 'B' if font_name == 'Arial' else ''
     effective_page_width = pdf.w - 2 * pdf.l_margin
 
-    # <<< CORREÇÃO: Bloco para adicionar o logo e o tagline no topo do PDF
+    # --- Bloco de Branding ---
     logo_path = 'globald_logo_512x512_original.jpg'
     if os.path.exists(logo_path):
         logo_width = 40
@@ -47,17 +47,25 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.multi_cell(effective_page_width, 10, info.get('product_title', 'N/A'), align='C')
     pdf.set_font(font_name, '', 12)
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}", align='C')
-    pdf.multi_cell(effective_page_width, 8, f"URL: {product_url}", align='C')
-    pdf.ln(5)
 
+    # <<< CORREÇÃO: Bloco para criar um hyperlink clicável e formatado
+    pdf.set_font(font_name, '', 11)
+    pdf.set_text_color(0, 0, 255)  # Define a cor do texto para azul
+    pdf.set_font(font_name, 'U', 11) # Define o estilo para sublinhado
+    
+    # Usa o método cell com o parâmetro 'link' para criar o hyperlink
+    pdf.cell(0, 8, txt="Link Analisado: Clique aqui", link=product_url, ln=True, align='C')
+    
+    # Reseta a cor e o estilo da fonte para o restante do documento
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font(font_name, '', 12)
+    pdf.ln(5)
+    # --- Fim da Correção ---
+    
     # --- Bloco de Análise de Inconsistências ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências e Melhorias", align='C', ln=True)
-    
     pdf.set_font(font_name, '', 11)
-    # Mantive o link aqui também para fácil acesso no corpo do relatório
-    pdf.multi_cell(effective_page_width, 8, f"Link Analisado: {product_url}")
-    pdf.ln(5)
     pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.'))
     pdf.ln(10)
     
@@ -86,6 +94,7 @@ def create_pdf_report(info: dict, product_url: str):
             print(f"Erro ao baixar imagem para PDF: {e}")
 
     return BytesIO(pdf.output())
+
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
 # (O restante do código do app.py não precisa de alterações)
@@ -234,5 +243,6 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
