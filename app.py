@@ -28,36 +28,40 @@ def create_pdf_report(info: dict, product_url: str):
     bold_style = 'B' if font_name == 'Arial' else ''
     effective_page_width = pdf.w - 2 * pdf.l_margin
 
-    # --- Bloco 1: Branding e Cabeçalho ---
+    # <<< CORREÇÃO: Bloco para adicionar o logo e o tagline no topo do PDF
     logo_path = 'globald_logo_512x512_original.jpg'
     if os.path.exists(logo_path):
         logo_width = 40
         logo_x_pos = (pdf.w - logo_width) / 2
         pdf.image(logo_path, x=logo_x_pos, w=logo_width)
         pdf.ln(5)
+    else:
+        st.warning(f"Arquivo do logo '{logo_path}' não encontrado. O PDF será gerado sem o logo.")
 
     pdf.set_font(font_name, '', 10)
     pdf.cell(0, 10, 'AI Compliance Relatório by www.GlobalD.ai', ln=True, align='C')
-    pdf.ln(10) # Espaço extra após o tagline
+    pdf.ln(10)
 
-    # --- Bloco 2: Informações do Produto ---
+    # --- Bloco de Informações do Produto ---
     pdf.set_font(font_name, bold_style, 16)
     pdf.multi_cell(effective_page_width, 10, info.get('product_title', 'N/A'), align='C')
     pdf.set_font(font_name, '', 12)
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}", align='C')
+    pdf.multi_cell(effective_page_width, 8, f"URL: {product_url}", align='C')
     pdf.ln(5)
 
-    # --- Bloco 3: Análise de Inconsistências (com link e novo título) ---
+    # --- Bloco de Análise de Inconsistências ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências e Melhorias", align='C', ln=True)
     
     pdf.set_font(font_name, '', 11)
+    # Mantive o link aqui também para fácil acesso no corpo do relatório
     pdf.multi_cell(effective_page_width, 8, f"Link Analisado: {product_url}")
     pdf.ln(5)
     pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.'))
     pdf.ln(10)
     
-    # --- Bloco 4: Imagens do Produto ---
+    # --- Bloco de Imagens do Produto ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Imagens do Produto", align='C', ln=True)
     
@@ -230,4 +234,5 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
