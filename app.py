@@ -7,12 +7,12 @@ import os
 from io import BytesIO
 import re
 
-# --- FUNÇÃO PARA GERAR O PDF (CORRIGIDA) ---
+# --- FUNÇÃO PARA GERAR O PDF ---
+# (A função create_pdf_report não precisa de alterações)
 def create_pdf_report(info: dict, product_url: str):
-    """Cria um relatório em PDF com a nova ordem de conteúdo."""
+    """Cria um relatório em PDF com título, texto e imagens do produto."""
     pdf = FPDF()
     pdf.add_page()
-
     font_name = 'Arial'
     font_path = 'DejaVuSans.ttf'
     if os.path.exists(font_path):
@@ -23,48 +23,26 @@ def create_pdf_report(info: dict, product_url: str):
             st.warning(f"Não foi possível carregar a fonte 'DejaVuSans.ttf': {e}. Usando fonte padrão.")
     else:
         st.warning("Arquivo de fonte 'DejaVuSans.ttf' não encontrado. Acentos no PDF podem não ser exibidos corretamente.")
-
     bold_style = 'B' if font_name == 'Arial' else ''
     effective_page_width = pdf.w - 2 * pdf.l_margin
-
-    # --- Bloco 1: Informações Gerais ---
     pdf.set_font(font_name, bold_style, 16)
     pdf.cell(0, 10, "Relatório de Análise de Produto", ln=True, align='C')
     pdf.set_font(font_name, '', 12)
     pdf.multi_cell(effective_page_width, 10, f"Título: {info.get('product_title', 'N/A')}", align='C')
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}", align='C')
     pdf.multi_cell(effective_page_width, 8, f"URL: {product_url}", align='C')
-    pdf.ln(5)
-
-    # --- Bloco 2: Descrições Textuais do Produto (Features) ---
-    pdf.set_font(font_name, bold_style, 14)
-    pdf.multi_cell(effective_page_width, 10, "Descrição Textual do Produto", align='C', ln=True)
-    pdf.set_font(font_name, '', 11)
-    
-    product_features = info.get('product_features', [])
-    if product_features:
-        for feature in product_features:
-            pdf.multi_cell(effective_page_width, 8, f"- {feature}")
-    else:
-        pdf.multi_cell(effective_page_width, 8, "Nenhuma descrição (feature bullets) encontrada.")
     pdf.ln(10)
-
-    # --- Bloco 3: Análise de Inconsistências da IA ---
     pdf.set_font(font_name, bold_style, 14)
-    pdf.multi_cell(effective_page_width, 10, "Análise de Inconsistências (IA)", align='C', ln=True)
+    pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências Gerado por IA", align='C', ln=True)
     pdf.set_font(font_name, '', 11)
     pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.'))
     pdf.ln(10)
-
-    # --- Bloco 4: Imagens do Produto ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Imagens do Produto", align='C', ln=True)
-    
     image_urls = info.get('product_photos', [])
     if not image_urls:
         pdf.set_font(font_name, '', 11)
         pdf.multi_cell(effective_page_width, 10, "Nenhuma imagem adicional encontrada.")
-
     image_width = 150
     image_x_pos = (pdf.w - image_width) / 2
     for i, url in enumerate(image_urls):
@@ -79,18 +57,16 @@ def create_pdf_report(info: dict, product_url: str):
             pdf.multi_cell(effective_page_width, 10, f"Erro ao carregar imagem {i+1}", align='C')
             pdf.set_text_color(0, 0, 0)
             print(f"Erro ao baixar imagem para PDF: {e}")
-
     return BytesIO(pdf.output())
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
-# (O restante do código do app.py não precisa de alterações)
 st.set_page_config(
     page_title="GlobalD IA Compliance para Amazon",
     page_icon="🚀",
     layout="wide"
 )
-st.title("🚀 GlobalD IA Compliance para Amazon")
 
+st.title("🚀 GlobalD IA Compliance para Amazon")
 st.markdown("Uma ferramenta de IA para **Analisar Inconsistências** e **Otimizar Listings** de produtos.")
 
 # URLs DA API
@@ -230,4 +206,3 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
-
