@@ -10,7 +10,7 @@ import re
 # --- FUNÇÃO PARA GERAR O PDF ---
 # (A função create_pdf_report não precisa de alterações)
 def create_pdf_report(info: dict, product_url: str):
-    """Cria um relatório em PDF com layout e hyperlink corrigidos."""
+    """Cria um relatório em PDF com layout aprimorado, incluindo imagem e link do produto."""
     pdf = FPDF()
     pdf.add_page()
 
@@ -40,27 +40,49 @@ def create_pdf_report(info: dict, product_url: str):
 
     pdf.set_font(font_name, '', 10)
     pdf.cell(0, 10, 'AI Compliance Relatório by www.GlobalD.ai', ln=True, align='C')
-    pdf.ln(10)
+    pdf.ln(5)
 
     # --- Bloco de Informações do Produto ---
     pdf.set_font(font_name, bold_style, 16)
     pdf.multi_cell(effective_page_width, 10, info.get('product_title', 'N/A'), align='C')
     pdf.set_font(font_name, '', 12)
     pdf.multi_cell(effective_page_width, 10, f"ASIN: {info.get('asin', 'N/A')}", align='C')
-
-    # <<< CORREÇÃO: Bloco para criar um hyperlink clicável e formatado
-    pdf.set_font(font_name, '', 11)
-    pdf.set_text_color(0, 0, 255)  # Define a cor do texto para azul
-    pdf.set_font(font_name, 'U', 11) # Define o estilo para sublinhado
-    
-    # Usa o método cell com o parâmetro 'link' para criar o hyperlink
-    pdf.cell(0, 8, txt="Link Analisado: Clique aqui", link=product_url, ln=True, align='C')
-    
-    # Reseta a cor e o estilo da fonte para o restante do documento
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_font(font_name, '', 12)
     pdf.ln(5)
-    # --- Fim da Correção ---
+
+    # <<< CORREÇÃO: Bloco para adicionar imagem pequena e link clicável
+    main_image_url = info.get('product_image_url')
+    if main_image_url:
+        try:
+            response = requests.get(main_image_url, timeout=20)
+            response.raise_for_status()
+            
+            # Posiciona a imagem pequena
+            img_size = 20 # 20mm x 20mm
+            y_before = pdf.get_y()
+            pdf.image(io.BytesIO(response.content), x=pdf.l_margin, y=y_before, w=img_size, h=img_size)
+
+            # Posiciona o cursor ao lado da imagem
+            pdf.set_xy(pdf.l_margin + img_size + 5, y_before + (img_size / 4))
+            
+            # Adiciona o link clicável
+            pdf.set_font(font_name, 'U', 11)
+            pdf.set_text_color(0, 0, 255)
+            pdf.cell(0, 10, "Acessar Página do Produto", link=product_url)
+            
+            # Reseta a fonte e a cor
+            pdf.set_font(font_name, '', 12)
+            pdf.set_text_color(0, 0, 0)
+            pdf.ln(img_size) # Pula a linha para baixo da imagem
+
+        except Exception as e:
+            print(f"Erro ao adicionar imagem principal ao PDF: {e}")
+            # Se a imagem falhar, apenas escreve o link
+            pdf.set_font(font_name, 'U', 11)
+            pdf.set_text_color(0, 0, 255)
+            pdf.cell(0, 8, "Link do Produto", link=product_url, ln=True, align='C')
+            pdf.set_font(font_name, '', 12)
+            pdf.set_text_color(0, 0, 0)
+            pdf.ln(5)
     
     # --- Bloco de Análise de Inconsistências ---
     pdf.set_font(font_name, bold_style, 14)
@@ -243,6 +265,7 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
