@@ -44,24 +44,25 @@ def create_pdf_report(info: dict, product_url: str):
 
     # --- Bloco de Informações do Produto (Layout Corrigido) ---
     pdf.set_font(font_name, bold_style, 14)
-    # <<< CORREÇÃO: Altura da célula (h) reduzida para diminuir espaçamento
-    pdf.multi_cell(effective_page_width, 8, info.get('product_title', 'N/A'), align='C') 
+    pdf.multi_cell(effective_page_width, 8, info.get('product_title', 'N/A'), align='C')
+    pdf.ln(3)
 
-    # <<< CORREÇÃO: Link clicável posicionado logo após o título
-    pdf.set_font(font_name, 'U', 10)
-    pdf.set_text_color(0, 0, 255)
-    # Altura da célula (h) pequena para o link
-    pdf.multi_cell(effective_page_width, 6, txt=product_url, link=product_url, align='C')
-    pdf.set_text_color(0, 0, 0)
+    # <<< CORREÇÃO: ASIN e Link agora alinhados à esquerda para melhor legibilidade
+    pdf.set_font(font_name, bold_style, 12)
+    pdf.cell(0, 8, f"ASIN: {info.get('asin', 'N/A')}", ln=True, align='L')
 
-    # ASIN logo abaixo do link
-    pdf.set_font(font_name, '', 11)
-    # Altura da célula (h) reduzida
-    pdf.multi_cell(effective_page_width, 6, f"ASIN: {info.get('asin', 'N/A')}", align='C')
+    pdf.set_font(font_name, bold_style, 12)
+    pdf.cell(0, 8, "Link do Produto:", ln=True, align='L')
     
-    # Espaçamento controlado antes da próxima seção
-    pdf.ln(8) 
-
+    pdf.set_font(font_name, 'U', 11)
+    pdf.set_text_color(0, 0, 255)
+    pdf.multi_cell(effective_page_width, 6, txt=product_url, link=product_url, align='L')
+    
+    # Reseta a fonte e a cor
+    pdf.set_font(font_name, '', 12)
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(8)
+    
     # --- Bloco de Análise de Inconsistências ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências e Melhorias", align='C', ln=True)
@@ -104,6 +105,7 @@ st.set_page_config(
     layout="wide"
 )
 st.title("🚀 GlobalD IA Compliance para Amazon")
+
 st.markdown("Uma ferramenta de IA para **Analisar Inconsistências** e **Otimizar Listings** de produtos.")
 
 # URLs DA API
@@ -243,6 +245,7 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
