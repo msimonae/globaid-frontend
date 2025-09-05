@@ -10,7 +10,7 @@ import re
 # --- FUNÇÃO PARA GERAR O PDF ---
 # (A função create_pdf_report não precisa de alterações)
 def create_pdf_report(info: dict, product_url: str):
-    """Cria um relatório em PDF com layout e hyperlink corrigidos."""
+    """Cria um relatório em PDF com branding e formatação de negrito corrigida."""
     pdf = FPDF()
     pdf.add_page()
 
@@ -42,23 +42,17 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.cell(0, 10, 'AI Compliance Relatório by www.GlobalD.ai', ln=True, align='C')
     pdf.ln(5)
 
-    # --- Bloco de Informações do Produto (Layout Corrigido) ---
+    # --- Bloco de Informações do Produto ---
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 8, info.get('product_title', 'N/A'), align='C')
     pdf.ln(3)
-
-    # <<< CORREÇÃO: ASIN e Link agora alinhados à esquerda para melhor legibilidade
     pdf.set_font(font_name, bold_style, 12)
     pdf.cell(0, 8, f"ASIN: {info.get('asin', 'N/A')}", ln=True, align='L')
-
     pdf.set_font(font_name, bold_style, 12)
     pdf.cell(0, 8, "Link do Produto:", ln=True, align='L')
-    
     pdf.set_font(font_name, 'U', 11)
     pdf.set_text_color(0, 0, 255)
     pdf.multi_cell(effective_page_width, 6, txt=product_url, link=product_url, align='L')
-    
-    # Reseta a fonte e a cor
     pdf.set_font(font_name, '', 12)
     pdf.set_text_color(0, 0, 0)
     pdf.ln(8)
@@ -67,8 +61,28 @@ def create_pdf_report(info: dict, product_url: str):
     pdf.set_font(font_name, bold_style, 14)
     pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências e Melhorias", align='C', ln=True)
     pdf.set_font(font_name, '', 11)
-    pdf.multi_cell(effective_page_width, 8, info.get('report', 'Nenhum relatório disponível.'))
+    
+    # <<< CORREÇÃO: Lógica para processar e renderizar o negrito do Markdown
+    report_text = info.get('report', 'Nenhum relatório disponível.')
+    
+    # Processa o relatório linha por linha para manter a formatação
+    for line in report_text.split('\n'):
+        # Divide a linha pelo delimitador de negrito "**"
+        parts = line.split('**')
+        for i, part in enumerate(parts):
+            if not part: continue # Pula partes vazias
+            
+            # Partes com índice ímpar estavam dentro de "**"
+            if i % 2 == 1:
+                pdf.set_font(font_name, bold_style, 11)
+                pdf.write(5, part)
+                pdf.set_font(font_name, '', 11) # Retorna ao estilo normal
+            else:
+                pdf.write(5, part)
+        pdf.ln() # Adiciona uma quebra de linha no final de cada linha do relatório
+
     pdf.ln(10)
+    # --- Fim da Correção ---
     
     # --- Bloco de Imagens do Produto ---
     pdf.set_font(font_name, bold_style, 14)
@@ -245,6 +259,7 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("### 📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
