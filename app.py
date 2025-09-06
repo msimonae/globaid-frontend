@@ -209,10 +209,10 @@ if st.session_state.product_info:
         
     with tab2:
         st.header("Otimização Completa do Listing para Máxima Performance")
-        st.markdown("Gere um listing completo otimizado para os algoritmos da Amazon e para conversão de vendas.")
+        st.markdown("Gere um listing completo (título, pontos, descrição, etc.) otimizado para os algoritmos da Amazon e para conversão de vendas, com base em reviews de clientes e dados de concorrentes.")
         
         if st.button("Gerar Listing Otimizado com IA", key="optimize_btn", use_container_width=True):
-            with st.spinner("A IA está trabalhando para criar seu listing otimizado... 🧠"):
+            with st.spinner("A IA está buscando reviews, analisando concorrentes e criando seu listing otimizado... Isso pode levar um minuto. 🧠"):
                 try:
                     sanitized_url = st.session_state.url_input.strip()
                     if not sanitized_url.startswith(('http://', 'https://')):
@@ -232,10 +232,9 @@ if st.session_state.product_info:
                     st.error(f"Erro de conexão com o backend: {e}")
 
         if st.session_state.optimization_report:
-            st.markdown("### 📈 Seu Novo Listing Otimizado:")
+            st.markdown("---")
+            st.subheader("📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
-
-
 
 
 
