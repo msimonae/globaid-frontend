@@ -8,11 +8,21 @@ from io import BytesIO
 
 def _draw_report_content(pdf, info: dict, product_url: str):
     """
-    Função auxiliar que desenha o conteúdo do relatório de UM produto 
+    Função auxiliar que desenha o conteúdo do relatório de UM produto
     na página atual do objeto PDF fornecido.
     """
     # Define as variáveis de estilo
-    font_name = pdf.font_family
+    font_name = 'Arial'
+    font_path = 'DejaVuSans.ttf'
+    if os.path.exists(font_path):
+        try:
+            # Adiciona a fonte apenas se não tiver sido adicionada antes
+            if font_name not in pdf.fonts:
+                 pdf.add_font('DejaVu', '', font_path, uni=True)
+            font_name = 'DejaVu'
+        except Exception:
+            pass # Se falhar, continua com Arial
+            
     bold_style = 'B' if font_name == 'Arial' else ''
     effective_page_width = pdf.w - 2 * pdf.l_margin
 
@@ -75,12 +85,13 @@ def create_single_pdf_report(info: dict, product_url: str):
     """Cria e retorna um PDF para um único relatório."""
     pdf = FPDF()
     pdf.add_page()
-    # Adiciona a fonte (a função de desenho espera que ela já esteja adicionada)
+
     font_path = 'DejaVuSans.ttf'
     if os.path.exists(font_path):
         try:
             pdf.add_font('DejaVu', '', font_path, uni=True)
-        except Exception: pass
+        except Exception as e:
+            st.warning(f"Não foi possível carregar a fonte 'DejaVuSans.ttf': {e}.")
     
     # Adiciona o branding
     logo_path = 'globald_logo_512x512_original.jpg'
@@ -89,7 +100,7 @@ def create_single_pdf_report(info: dict, product_url: str):
         logo_x_pos = (pdf.w - logo_width) / 2
         pdf.image(logo_path, x=logo_x_pos, w=logo_width)
         pdf.ln(5)
-    pdf.set_font('Arial', '', 10) # Usa uma fonte segura para o tagline
+    pdf.set_font('Arial', '', 10)
     pdf.cell(0, 10, 'AI Compliance Relatório by www.GlobalD.ai', ln=True, align='C')
     pdf.ln(5)
 
@@ -102,12 +113,12 @@ def create_batch_pdf_report(batch_results: list, urls: list):
     """Cria um PDF consolidado a partir de uma lista de resultados."""
     pdf = FPDF()
     
-    # Adiciona a fonte uma vez
     font_path = 'DejaVuSans.ttf'
     if os.path.exists(font_path):
         try:
             pdf.add_font('DejaVu', '', font_path, uni=True)
-        except Exception: pass
+        except Exception as e:
+            st.warning(f"Não foi possível carregar a fonte 'DejaVuSans.ttf': {e}.")
 
     for i, result_info in enumerate(batch_results):
         pdf.add_page()
@@ -123,7 +134,6 @@ def create_batch_pdf_report(batch_results: list, urls: list):
         pdf.cell(0, 10, 'AI Compliance Relatório by www.GlobalD.ai', ln=True, align='C')
         pdf.ln(5)
 
-        # Pega a URL correspondente para este resultado
         product_url = urls[i] if i < len(urls) else "URL não encontrada"
         
         # Desenha o conteúdo do relatório para este produto
