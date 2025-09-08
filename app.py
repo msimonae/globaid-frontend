@@ -6,6 +6,7 @@ from fpdf import FPDF
 import os
 from io import BytesIO
 import re
+from pdf_generator import create_single_pdf_report # <<< Importa a função refatorada
 
 # --- FUNÇÃO PARA GERAR O PDF ---
 # (A função create_pdf_report não precisa de alterações)
@@ -198,8 +199,9 @@ if st.session_state.product_info:
         
         st.divider()
         st.subheader("Download do Relatório")
-        
-        pdf_file = create_pdf_report(info, st.session_state.url_input)
+
+        pdf_file = create_single_pdf_report(info, st.session_state.url_input)
+        #pdf_file = create_pdf_report(info, st.session_state.url_input)
         st.download_button(
             label="📄 Baixar Relatório em PDF",
             data=pdf_file,
@@ -235,6 +237,7 @@ if st.session_state.product_info:
             st.markdown("---")
             st.subheader("📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
