@@ -8,85 +8,6 @@ from io import BytesIO
 import re
 from pdf_generator import create_single_pdf_report # <<< Importa a função refatorada
 
-# --- FUNÇÃO PARA GERAR O PDF ---
-# (A função create_pdf_report não precisa de alterações)
-def create_pdf_report(info: dict, product_url: str):
-    """Cria um relatório em PDF com layout aprimorado e formatação de negrito."""
-    pdf = FPDF()
-    pdf.add_page()
-    font_name = 'Arial'
-    font_path = 'DejaVuSans.ttf'
-    if os.path.exists(font_path):
-        try:
-            pdf.add_font('DejaVu', '', font_path, uni=True)
-            font_name = 'DejaVu'
-        except Exception as e:
-            st.warning(f"Não foi possível carregar a fonte 'DejaVuSans.ttf': {e}. Usando fonte padrão.")
-    else:
-        st.warning("Arquivo de fonte 'DejaVuSans.ttf' não encontrado. Acentos no PDF podem não ser exibidos corretamente.")
-    bold_style = 'B' if font_name == 'Arial' else ''
-    effective_page_width = pdf.w - 2 * pdf.l_margin
-    logo_path = 'globald_logo_512x512_original.jpg'
-    if os.path.exists(logo_path):
-        logo_width = 40
-        logo_x_pos = (pdf.w - logo_width) / 2
-        pdf.image(logo_path, x=logo_x_pos, w=logo_width)
-        pdf.ln(5)
-    else:
-        st.warning(f"Arquivo do logo '{logo_path}' não encontrado. O PDF será gerado sem o logo.")
-    pdf.set_font(font_name, '', 10)
-    pdf.cell(0, 10, 'AI Compliance Relatório by www.GlobalD.ai', ln=True, align='C')
-    pdf.ln(5)
-    pdf.set_font(font_name, bold_style, 14)
-    pdf.multi_cell(effective_page_width, 8, info.get('product_title', 'N/A'), align='C')
-    pdf.ln(3)
-    pdf.set_font(font_name, bold_style, 12)
-    pdf.cell(0, 8, f"ASIN: {info.get('asin', 'N/A')}", ln=True, align='L')
-    pdf.set_font(font_name, bold_style, 12)
-    pdf.cell(0, 8, "Link do Produto:", ln=True, align='L')
-    pdf.set_font(font_name, 'U', 11)
-    pdf.set_text_color(0, 0, 255)
-    pdf.multi_cell(effective_page_width, 6, txt=product_url, link=product_url, align='L')
-    pdf.set_font(font_name, '', 12)
-    pdf.set_text_color(0, 0, 0)
-    pdf.ln(8)
-    pdf.set_font(font_name, bold_style, 14)
-    pdf.multi_cell(effective_page_width, 10, "Relatório de Inconsistências e Melhorias", align='C', ln=True)
-    pdf.set_font(font_name, '', 11)
-    report_text = info.get('report', 'Nenhum relatório disponível.')
-    for line in report_text.split('\n'):
-        parts = line.split('**')
-        for i, part in enumerate(parts):
-            if not part: continue
-            if i % 2 == 1:
-                pdf.set_font(font_name, bold_style, 11)
-                pdf.write(5, part)
-                pdf.set_font(font_name, '', 11)
-            else:
-                pdf.write(5, part)
-        pdf.ln()
-    pdf.ln(10)
-    pdf.set_font(font_name, bold_style, 14)
-    pdf.multi_cell(effective_page_width, 10, "Imagens do Produto", align='C', ln=True)
-    image_urls = info.get('product_photos', [])
-    if not image_urls:
-        pdf.set_font(font_name, '', 11)
-        pdf.multi_cell(effective_page_width, 10, "Nenhuma imagem adicional encontrada.")
-    image_width = 120
-    image_x_pos = (pdf.w - image_width) / 2
-    for i, url in enumerate(image_urls):
-        try:
-            response = requests.get(url, timeout=20)
-            response.raise_for_status()
-            pdf.image(io.BytesIO(response.content), x=image_x_pos, w=image_width)
-            pdf.ln(5)
-        except Exception as e:
-            pdf.set_text_color(255, 0, 0)
-            pdf.set_font(font_name, '', 10)
-            pdf.multi_cell(effective_page_width, 10, f"Erro ao carregar imagem {i+1}", align='C')
-            pdf.set_text_color(0, 0, 0)
-            print(f"Erro ao baixar imagem para PDF: {e}")
-    return BytesIO(pdf.output())
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
 st.set_page_config(
@@ -109,6 +30,7 @@ if 'optimization_report' not in st.session_state: st.session_state.optimization_
 if 'url_input' not in st.session_state: st.session_state.url_input = ""
 
 # --- FORMULÁRIO NA BARRA LATERAL ---
+
 with st.sidebar:
     st.header("🔍 Inserir Produto")
     with st.form("product_form"):
@@ -178,8 +100,6 @@ if st.session_state.product_info:
     with tab1:
         st.header("Verificação de Consistência entre Texto e Imagens")
         report_text = info.get('report', 'Não foi possível gerar o relatório de análise.')
-        
-        # <<< CORREÇÃO: Garante que st.markdown seja usado para renderizar o negrito
         with st.expander("Ver Relatório de Análise", expanded=True):
             st.markdown(report_text, unsafe_allow_html=True)
 
@@ -199,9 +119,9 @@ if st.session_state.product_info:
         
         st.divider()
         st.subheader("Download do Relatório")
-
+        
+        # <<< ALTERAÇÃO: Chama a nova função importada
         pdf_file = create_single_pdf_report(info, st.session_state.url_input)
-        #pdf_file = create_pdf_report(info, st.session_state.url_input)
         st.download_button(
             label="📄 Baixar Relatório em PDF",
             data=pdf_file,
@@ -237,6 +157,7 @@ if st.session_state.product_info:
             st.markdown("---")
             st.subheader("📈 Seu Novo Listing Otimizado:")
             st.markdown(st.session_state.optimization_report)
+
 
 
 
