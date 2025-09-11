@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import requests
 from pdf_generator import create_batch_pdf_report
+from docx_generator import create_batch_docx_report
 
 st.set_page_config(layout="wide", page_title="Análise em Lote")
 
@@ -134,16 +135,18 @@ if st.session_state.uploaded_urls:
 if st.session_state.batch_results:
     st.divider()
     st.subheader("📊 Relatório Consolidado")
-    st.info("A análise de todos os produtos foi concluída. Clique no botão abaixo para baixar o relatório consolidado em PDF.")
+    st.info("A análise de todos os produtos foi concluída. Clique no botão abaixo para baixar o relatório consolidado.")
     
-    pdf_file = create_batch_pdf_report(st.session_state.batch_results, st.session_state.uploaded_urls)
+    # <<< ALTERAÇÃO: Chama a nova função e atualiza os parâmetros do botão para .docx
+    docx_file = create_batch_docx_report(st.session_state.batch_results, st.session_state.uploaded_urls)
     st.download_button(
-        label="📄 Baixar Relatório Consolidado em PDF",
-        data=pdf_file,
-        file_name="relatorio_consolidado_analise.pdf",
-        mime="application/pdf",
-        use_container_width=True
+        label="📄 Baixar Relatório Consolidado em Word (.docx)",
+        data=docx_file,
+        file_name="relatorio_consolidado_analise.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
     with st.expander("🔍 Ver resultados individuais da análise (JSON)"):
         st.json(st.session_state.batch_results)
+
+
