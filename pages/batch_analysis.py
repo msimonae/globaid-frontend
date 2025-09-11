@@ -2,7 +2,8 @@
 import streamlit as st
 import pandas as pd
 import requests
-from pdf_generator import create_batch_pdf_report
+# <<< ALTERAÇÃO: Importa o gerador de DOCX em vez de PDF
+from docx_generator import create_batch_docx_report
 
 st.set_page_config(layout="wide", page_title="Análise em Lote")
 
@@ -24,21 +25,11 @@ st.markdown(
     """
     <style>
     .upload-box {
-        border: 2px dashed #0d6efd;
-        border-radius: 10px;
-        padding: 25px;
-        text-align: center;
-        margin-bottom: 20px;
-        background-color: #f8f9fa;
+        border: 2px dashed #0d6efd; border-radius: 10px; padding: 25px;
+        text-align: center; margin-bottom: 20px; background-color: #f8f9fa;
     }
-    .upload-icon {
-        font-size: 50px;
-        color: #0d6efd;
-    }
-    .upload-text {
-        font-size: 1.1em;
-        font-weight: bold;
-    }
+    .upload-icon { font-size: 50px; color: #0d6efd; }
+    .upload-text { font-size: 1.1em; font-weight: bold; }
     </style>
     """,
     unsafe_allow_html=True
@@ -64,14 +55,9 @@ with st.container():
 
 # --- Lógica de Processamento do Arquivo ---
 if uploaded_file is not None:
-    urls = []
-    
-    # <<< CORREÇÃO: Função para higienizar cada URL individualmente
     def sanitize_url(url):
-        if not isinstance(url, str) or not url.strip():
-            return None
+        if not isinstance(url, str) or not url.strip(): return None
         s_url = url.strip()
-        # Adiciona https:// se estiver faltando, crucial para a validação da API
         if not s_url.startswith(('http://', 'https://')):
             s_url = 'https://' + s_url
         return s_url
@@ -87,24 +73,21 @@ if uploaded_file is not None:
             df = pd.read_excel(uploaded_file, header=None)
             raw_lines = df.iloc[:, 0].dropna().tolist()
         
-        # Aplica a higienização em todas as URLs lidas
         valid_urls = [sanitize_url(line) for line in raw_lines]
-        valid_urls = [url for url in valid_urls if url] # Remove as linhas que resultaram em None
+        valid_urls = [url for url in valid_urls if url]
 
         st.session_state.uploaded_urls = valid_urls
 
-        # Exibe o resultado da leitura
         if valid_urls:
             st.success(f"{len(valid_urls)} URLs válidas encontradas e prontas para análise.")
             with st.expander("Visualizar URLs carregadas"):
                 st.dataframe(valid_urls, use_container_width=True)
         else:
             st.error("0 URLs válidas encontradas no arquivo. Verifique o conteúdo do arquivo e tente novamente.")
-
     except Exception as e:
         st.error(f"Erro ao processar o arquivo: {e}")
 
-# --- Lógica do Botão de Análise (só aparece se houver URLs) ---
+# --- Lógica do Botão de Análise ---
 if st.session_state.uploaded_urls:
     if st.button("🚀 Iniciar Análise em Lote", type="primary", use_container_width=True):
         urls_to_process = st.session_state.uploaded_urls
@@ -113,10 +96,8 @@ if st.session_state.uploaded_urls:
                 payload = {"amazon_urls": urls_to_process}
                 response = requests.post(BATCH_ANALYZE_URL, json=payload, timeout=900)
                 response.raise_for_status()
-                
                 st.session_state.batch_results = response.json().get('results', [])
                 st.success("Análise em lote concluída!")
-
             except requests.exceptions.HTTPError as e:
                 st.error(f"Erro na API durante a análise em lote: {e.response.text}")
             except requests.exceptions.RequestException as e:
@@ -126,14 +107,17 @@ if st.session_state.uploaded_urls:
 if st.session_state.batch_results:
     st.divider()
     st.subheader("📊 Relatório Consolidado")
-    st.info("A análise de todos os produtos foi concluída. Clique no botão abaixo para baixar o relatório consolidado em PDF.")
     
-    pdf_file = create_batch_pdf_report(st.session_state.batch_results, st.session_state.uploaded_urls)
+    # <<< ALTERAÇÃO: Mensagem de informação atualizada para Word (.docx)
+    st.info("A análise de todos os produtos foi concluída. Clique no botão abaixo para baixar o relatório consolidado em Word (.docx).")
+    
+    # <<< ALTERAÇÃO: Lógica agora gera o relatório em Word (.docx)
+    docx_file = create_batch_docx_report(st.session_state.batch_results, st.session_state.uploaded_urls)
     st.download_button(
-        label="📄 Baixar Relatório Consolidado em PDF",
-        data=pdf_file,
-        file_name="relatorio_consolidado_analise.pdf",
-        mime="application/pdf",
+        label="📄 Baixar Relatório Consolidado em Word (.docx)",
+        data=docx_file,
+        file_name="relatorio_consolidado_analise.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         use_container_width=True
     )
 
