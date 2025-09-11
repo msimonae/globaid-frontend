@@ -2,6 +2,7 @@
 import streamlit as st
 import requests
 import io
+import docx # <<< CORREÇÃO: Importa o módulo principal docx
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -14,16 +15,20 @@ def _add_hyperlink(paragraph, text, url):
     """
     part = paragraph.part
     r_id = part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
+
     hyperlink = docx.oxml.shared.OxmlElement('w:hyperlink')
     hyperlink.set(docx.oxml.shared.qn('r:id'), r_id, )
+
     new_run = docx.oxml.shared.OxmlElement('w:r')
     rPr = docx.oxml.shared.OxmlElement('w:rPr')
+
     rStyle = docx.oxml.shared.OxmlElement('w:rStyle')
     rStyle.set(docx.oxml.shared.qn('w:val'), 'Hyperlink')
     rPr.append(rStyle)
     new_run.append(rPr)
     new_run.text = text
     hyperlink.append(new_run)
+
     paragraph._p.append(hyperlink)
     return hyperlink
 
@@ -68,7 +73,6 @@ def _draw_report_content_docx(document, info: dict, product_url: str):
             response.raise_for_status()
             image_stream = io.BytesIO(response.content)
             
-            # <<< CORREÇÃO: Largura da imagem reduzida de 5.0 para 3.5 polegadas
             document.add_picture(image_stream, width=Inches(3.5))
             
             document.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
