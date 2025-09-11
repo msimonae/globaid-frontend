@@ -5,6 +5,7 @@ import re
 from pdf_generator import create_single_pdf_report # Importa a função específica para gerar o PDF único
 from docx_generator import create_single_docx_report
 
+# --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
 st.set_page_config(
     page_title="GlobalD IA Compliance para Amazon",
     page_icon="🚀",
@@ -14,7 +15,7 @@ st.title("🚀 GlobalD IA Compliance para Amazon")
 st.markdown("Uma ferramenta de IA para **Analisar Inconsistências** e **Otimizar Listings** de produtos.")
 
 # URLs DA API
-BACKEND_BASE_URL = "https://globald.onrender.com" # Ou o URL do seu servidor backend
+BACKEND_BASE_URL = "https://globald.onrender.com"
 ANALYZE_URL = f"{BACKEND_BASE_URL}/analyze"
 OPTIMIZE_URL = f"{BACKEND_BASE_URL}/optimize"
 
@@ -35,7 +36,7 @@ with st.sidebar:
         with col2:
             cleared = st.form_submit_button("Limpar", use_container_width=True)
 
-# LÓGICA PRINCIPAL (Buscar e Limpar)
+# LÓGICA PRINCIPAL
 if cleared:
     st.session_state.product_info = None
     st.session_state.analysis_report = None
@@ -74,7 +75,7 @@ if submitted and amazon_url:
             st.error(f"Erro de conexão com o backend: {e}")
             st.session_state.product_info = None
 
-# EXIBIÇÃO DOS RESULTADOS (se houver product_info)
+# EXIBIÇÃO DOS RESULTADOS
 if st.session_state.product_info:
     info = st.session_state.product_info
     
@@ -88,7 +89,6 @@ if st.session_state.product_info:
         st.info(f"**ASIN:** `{info.get('asin', 'N/A')}` | **Mercado:** `{info.get('country', 'N/A')}`")
 
     st.markdown("---")
-
     tab1, tab2 = st.tabs(["📊 Análise de Inconsistências", "✨ Otimização de Listing (SEO)"])
 
     with tab1:
@@ -99,9 +99,7 @@ if st.session_state.product_info:
 
         st.divider()
         st.subheader("Imagens do Produto Analisadas")
-        
         all_image_urls = info.get('product_photos', [])
-        
         if all_image_urls:
             num_columns = 4
             cols = st.columns(num_columns)
@@ -113,22 +111,14 @@ if st.session_state.product_info:
         
         st.divider()
         st.subheader("Download do Relatório")
-  
-        # <<< ALTERAÇÃO: Chama a nova função e atualiza os parâmetros do botão para .docx
+        
+        # O botão de download agora usa a função de DOCX corrigida
         docx_file = create_single_docx_report(info, st.session_state.url_input)
         st.download_button(
             label="📄 Baixar Relatório em Word (.docx)",
             data=docx_file,
             file_name=f"relatorio_analise_{info.get('asin', 'produto')}.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
-        
-        pdf_file = create_single_pdf_report(info, st.session_state.url_input)
-        st.download_button(
-            label="📄 Baixar Relatório em PDF",
-            data=pdf_file,
-            file_name=f"relatorio_analise_{info.get('asin', 'produto')}.pdf",
-            mime="application/pdf"
         )
         
     with tab2:
@@ -161,3 +151,4 @@ if st.session_state.product_info:
             st.subheader("📈 Seu Novo Listing Otimizado:")
 
             st.markdown(st.session_state.optimization_report)
+
