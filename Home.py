@@ -3,6 +3,7 @@ import streamlit as st
 import requests
 import re
 from pdf_generator import create_single_pdf_report # Importa a função específica para gerar o PDF único
+from docx_generator import create_single_docx_report
 
 st.set_page_config(
     page_title="GlobalD IA Compliance para Amazon",
@@ -112,6 +113,15 @@ if st.session_state.product_info:
         
         st.divider()
         st.subheader("Download do Relatório")
+  
+        # <<< ALTERAÇÃO: Chama a nova função e atualiza os parâmetros do botão para .docx
+        docx_file = create_single_docx_report(info, st.session_state.url_input)
+        st.download_button(
+            label="📄 Baixar Relatório em Word (.docx)",
+            data=docx_file,
+            file_name=f"relatorio_analise_{info.get('asin', 'produto')}.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
         
         pdf_file = create_single_pdf_report(info, st.session_state.url_input)
         st.download_button(
@@ -149,4 +159,5 @@ if st.session_state.product_info:
         if st.session_state.optimization_report:
             st.markdown("---")
             st.subheader("📈 Seu Novo Listing Otimizado:")
+
             st.markdown(st.session_state.optimization_report)
