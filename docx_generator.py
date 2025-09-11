@@ -8,6 +8,25 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import os
 import re
 
+def _add_hyperlink(paragraph, text, url):
+    """
+    Função auxiliar para adicionar um hyperlink funcional a um parágrafo.
+    """
+    part = paragraph.part
+    r_id = part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
+    hyperlink = docx.oxml.shared.OxmlElement('w:hyperlink')
+    hyperlink.set(docx.oxml.shared.qn('r:id'), r_id, )
+    new_run = docx.oxml.shared.OxmlElement('w:r')
+    rPr = docx.oxml.shared.OxmlElement('w:rPr')
+    rStyle = docx.oxml.shared.OxmlElement('w:rStyle')
+    rStyle.set(docx.oxml.shared.qn('w:val'), 'Hyperlink')
+    rPr.append(rStyle)
+    new_run.append(rPr)
+    new_run.text = text
+    hyperlink.append(new_run)
+    paragraph._p.append(hyperlink)
+    return hyperlink
+
 def _draw_report_content_docx(document, info: dict, product_url: str):
     """
     Desenha o conteúdo do relatório de UM produto no documento Word fornecido.
@@ -20,13 +39,9 @@ def _draw_report_content_docx(document, info: dict, product_url: str):
     p_asin.add_run('ASIN: ').bold = True
     p_asin.add_run(info.get('asin', 'N/A'))
     
-    # <<< CORREÇÃO: Lógica de hyperlink simplificada e robusta
     p_link = document.add_paragraph()
     p_link.add_run('Link do Produto: ').bold = True
-    run = p_link.add_run(product_url)
-    font = run.font
-    font.underline = True
-    font.color.rgb = RGBColor(0x0A, 0x41, 0x6E) # Cor azul escura para o link
+    _add_hyperlink(p_link, product_url, product_url)
 
     # Bloco de Análise de Inconsistências
     document.add_heading("Relatório de Inconsistências e Melhorias", level=2).alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -52,7 +67,10 @@ def _draw_report_content_docx(document, info: dict, product_url: str):
             response = requests.get(url, timeout=20)
             response.raise_for_status()
             image_stream = io.BytesIO(response.content)
-            document.add_picture(image_stream, width=Inches(5.0))
+            
+            # <<< CORREÇÃO: Largura da imagem reduzida de 5.0 para 3.5 polegadas
+            document.add_picture(image_stream, width=Inches(3.5))
+            
             document.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
             p_caption = document.add_paragraph(f"Imagem {i+1}")
             p_caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
