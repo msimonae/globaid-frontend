@@ -2,8 +2,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-# Importa ambos os geradores de relatório
-from pdf_generator import create_batch_pdf_report
+# <<< ALTERAÇÃO: Importa apenas o gerador de DOCX em lote
 from docx_generator import create_batch_docx_report
 
 st.set_page_config(layout="wide", page_title="Análise em Lote")
@@ -20,15 +19,6 @@ if 'batch_results' not in st.session_state:
     st.session_state.batch_results = None
 if 'uploaded_urls' not in st.session_state:
     st.session_state.uploaded_urls = None
-
-# --- Seletor de formato do relatório ---
-# Garante que a escolha do formato seja visível antes do upload
-format_choice_batch = st.radio(
-    "Selecione o formato para o relatório consolidado:",
-    ('Word (.docx)', 'PDF (.pdf)'),
-    key='format_selector_batch',
-    index=0  # Define Word (.docx) como o padrão
-)
 
 # --- Upload Box com CSS ---
 st.markdown(
@@ -60,13 +50,13 @@ with st.container():
 
 # --- Lógica de Processamento do Arquivo ---
 if uploaded_file is not None:
-    # (A lógica de leitura e higienização de URLs permanece a mesma)
     def sanitize_url(url):
         if not isinstance(url, str) or not url.strip(): return None
         s_url = url.strip()
         if not s_url.startswith(('http://', 'https://')):
             s_url = 'https://' + s_url
         return s_url
+
     try:
         raw_lines = []
         if uploaded_file.name.endswith('.txt'):
@@ -94,8 +84,25 @@ if uploaded_file is not None:
 # --- Lógica do Botão de Análise ---
 if st.session_state.uploaded_urls:
     if st.button("🚀 Iniciar Análise em Lote", type="primary", use_container_width=True):
-        # (A lógica de chamada da API permanece a mesma)
-        pass
+        urls_to_process = st.session_state.uploaded_urls
+        with st.spinner(f"Analisando {len(urls_to_process)} produtos... Isso pode levar vários minutos. 🤖"):
+            try:
+                payload = {"amazon_urls": urls_to_process}
+                response = requests.post(BATCH_ANALYZE_URL, json=payload, timeout=900)
+                response.raise_for_status()
+                st.session_state.batch_results = response.json().get('results', [])
+                st.success("Análise em lote concluída!")
+            except requests.exceptions.HTTPError as e:
+                status_code = e.response.status_code
+                try:
+                    error_details = e.response.json().get("detail", e.response.text)
+                except requests.exceptions.JSONDecodeError:
+                    error_details = e.response.text
+                st.error(f"Erro na API durante a análise em lote (Código: {status_code}): {error_details}")
+            except requests.exceptions.RequestException as e:
+                st.error(f"Erro de conexão com o backend: {e}")
+            except Exception as e:
+                st.error(f"Ocorreu um erro inesperado: {e}")
 
 # --- Exibição do Relatório para Download ---
 if st.session_state.batch_results:
@@ -103,13 +110,14 @@ if st.session_state.batch_results:
     st.subheader("📊 Relatório Consolidado")
     st.info("A análise de todos os produtos foi concluída. Clique no botão abaixo para baixar o relatório consolidado.")
     
-    # <<< ALTERAÇÃO: Lógica simplificada para gerar sempre DOCX
+    # <<< CORREÇÃO: Lógica simplificada para gerar SEMPRE o relatório em Word (.docx)
     docx_file = create_batch_docx_report(st.session_state.batch_results, st.session_state.uploaded_urls)
     st.download_button(
         label="📄 Baixar Relatório Consolidado em Word (.docx)",
         data=docx_file,
         file_name="relatorio_consolidado_analise.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        use_container_width=True
     )
 
     with st.expander("🔍 Ver resultados individuais da análise (JSON)"):
