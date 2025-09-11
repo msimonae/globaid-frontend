@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-# Importa apenas o gerador de DOCX em lote
+# <<< CORREÇÃO: Importa apenas o gerador de DOCX em lote
 from docx_generator import create_batch_docx_report
 
 st.set_page_config(layout="wide", page_title="Análise em Lote")
