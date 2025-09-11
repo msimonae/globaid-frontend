@@ -8,51 +8,32 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import os
 import re
 
-def _add_hyperlink(paragraph, text, url):
-    """Adiciona um hyperlink a um parágrafo no documento."""
-    part = paragraph.part
-    r_id = part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
-
-    hyperlink = docx.oxml.shared.OxmlElement('w:hyperlink')
-    hyperlink.set(docx.oxml.shared.qn('r:id'), r_id, )
-
-    new_run = docx.oxml.shared.OxmlElement('w:r')
-    rPr = docx.oxml.shared.OxmlElement('w:rPr')
-
-    rStyle = docx.oxml.shared.OxmlElement('w:rStyle')
-    rStyle.set(docx.oxml.shared.qn('w:val'), 'Hyperlink')
-    rPr.append(rStyle)
-    new_run.append(rPr)
-    new_run.text = text
-    hyperlink.append(new_run)
-
-    paragraph._p.append(hyperlink)
-    return hyperlink
-
 def _draw_report_content_docx(document, info: dict, product_url: str):
-    """Desenha o conteúdo do relatório de UM produto no documento Word."""
+    """
+    Desenha o conteúdo do relatório de UM produto no documento Word fornecido.
+    """
     # Bloco de Informações do Produto
     p_title = document.add_heading(info.get('product_title', 'Título não encontrado'), level=1)
     p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     
     p_asin = document.add_paragraph()
-    p_asin.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p_asin.add_run('ASIN: ').bold = True
     p_asin.add_run(info.get('asin', 'N/A'))
     
-    # Adiciona o link do produto de forma clicável
+    # <<< CORREÇÃO: Lógica de hyperlink simplificada e robusta
     p_link = document.add_paragraph()
-    p_link.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p_link.add_run('Link do Produto: ').bold = True
-    _add_hyperlink(p_link, product_url, product_url)
+    run = p_link.add_run(product_url)
+    font = run.font
+    font.underline = True
+    font.color.rgb = RGBColor(0x0A, 0x41, 0x6E) # Cor azul escura para o link
 
     # Bloco de Análise de Inconsistências
-    p_header_report = document.add_heading("Relatório de Inconsistências e Melhorias", level=2)
-    p_header_report.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    document.add_heading("Relatório de Inconsistências e Melhorias", level=2).alignment = WD_ALIGN_PARAGRAPH.CENTER
     
     report_text = info.get('report', 'Nenhum relatório disponível.')
     p_report = document.add_paragraph()
-    # Processa o negrito do Markdown
+    # Processa o negrito do Markdown para o formato do Word
     parts = re.split(r'(\*\*.*?\*\*)', report_text)
     for part in parts:
         if part.startswith('**') and part.endswith('**'):
@@ -71,11 +52,8 @@ def _draw_report_content_docx(document, info: dict, product_url: str):
             response = requests.get(url, timeout=20)
             response.raise_for_status()
             image_stream = io.BytesIO(response.content)
-            # Adiciona a imagem centralizada e com tamanho reduzido
-            p_img = document.add_picture(image_stream, width=Inches(5.0))
-            last_paragraph = document.paragraphs[-1]
-            last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            # Adiciona a legenda
+            document.add_picture(image_stream, width=Inches(5.0))
+            document.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
             p_caption = document.add_paragraph(f"Imagem {i+1}")
             p_caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
         except Exception as e:
@@ -85,8 +63,6 @@ def _draw_report_content_docx(document, info: dict, product_url: str):
 def create_single_docx_report(info: dict, product_url: str):
     """Cria e retorna um DOCX para um único relatório."""
     document = Document()
-
-    # Adiciona o branding
     logo_path = 'globald_logo_512x512_original.jpg'
     if os.path.exists(logo_path):
         p_logo = document.add_picture(logo_path, width=Inches(1.5))
@@ -99,7 +75,6 @@ def create_single_docx_report(info: dict, product_url: str):
     
     _draw_report_content_docx(document, info, product_url)
     
-    # Salva o documento em um buffer de memória
     doc_io = io.BytesIO()
     document.save(doc_io)
     doc_io.seek(0)
@@ -108,8 +83,6 @@ def create_single_docx_report(info: dict, product_url: str):
 def create_batch_docx_report(batch_results: list, urls: list):
     """Cria um DOCX consolidado a partir de uma lista de resultados."""
     document = Document()
-
-    # Adiciona o branding apenas uma vez, na primeira página
     logo_path = 'globald_logo_512x512_original.jpg'
     if os.path.exists(logo_path):
         p_logo = document.add_picture(logo_path, width=Inches(1.5))
@@ -117,18 +90,14 @@ def create_batch_docx_report(batch_results: list, urls: list):
     
     p_tagline = document.add_paragraph('AI Compliance Relatório by www.GlobalD.ai')
     p_tagline.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    document.add_paragraph() # Espaçamento
+    document.add_paragraph()
 
     for i, result_info in enumerate(batch_results):
-        product_url = urls[i] if i < len(urls) else "URL não encontrada"
-        
-        # Adiciona uma quebra de página antes de cada novo produto (exceto o primeiro)
         if i > 0:
             document.add_page_break()
-            
+        product_url = urls[i] if i < len(urls) else "URL não encontrada"
         _draw_report_content_docx(document, result_info, product_url)
 
-    # Salva o documento em um buffer de memória
     doc_io = io.BytesIO()
     document.save(doc_io)
     doc_io.seek(0)
