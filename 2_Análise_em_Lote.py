@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-# <<< ALTERAÇÃO: Importa apenas o gerador de DOCX em lote
+# Importa apenas o gerador de DOCX em lote
 from docx_generator import create_batch_docx_report
 
 st.set_page_config(layout="wide", page_title="Análise em Lote")
@@ -108,9 +108,11 @@ if st.session_state.uploaded_urls:
 if st.session_state.batch_results:
     st.divider()
     st.subheader("📊 Relatório Consolidado")
-    st.info("A análise de todos os produtos foi concluída. Clique no botão abaixo para baixar o relatório consolidado.")
     
-    # <<< CORREÇÃO: Lógica simplificada para gerar SEMPRE o relatório em Word (.docx)
+    # <<< CORREÇÃO: Mensagem de informação atualizada para Word (.docx)
+    st.info("A análise de todos os produtos foi concluída. Clique no botão abaixo para baixar o relatório consolidado em Word (.docx).")
+    
+    # <<< CORREÇÃO: Lógica agora gera APENAS o relatório em Word (.docx)
     docx_file = create_batch_docx_report(st.session_state.batch_results, st.session_state.uploaded_urls)
     st.download_button(
         label="📄 Baixar Relatório Consolidado em Word (.docx)",
