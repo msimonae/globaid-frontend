@@ -2,7 +2,7 @@
 import streamlit as st
 import requests
 import re
-from pdf_generator import create_single_pdf_report # Importa a função específica para gerar o PDF único
+#from pdf_generator import create_single_pdf_report # Importa a função específica para gerar o PDF único
 from docx_generator import create_single_docx_report
 
 # --- CONFIGURAÇÃO DA PÁGINA E INTERFACE ---
@@ -151,4 +151,5 @@ if st.session_state.product_info:
             st.subheader("📈 Seu Novo Listing Otimizado:")
 
             st.markdown(st.session_state.optimization_report)
+
 
